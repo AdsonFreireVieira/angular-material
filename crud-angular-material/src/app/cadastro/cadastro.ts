@@ -7,17 +7,21 @@ import{MatInputModule} from '@angular/material/input'
 import {MatIconModule} from '@angular/material/icon'
 import{MatButtonModule} from '@angular/material/button'
 import{MatSnackBar}from '@angular/material/snack-bar';
+import{MatSelectChange, MatSelectModule} from '@angular/material/select'
 import { Cliente } from './cliente';
 import { ClienteService } from '../cliente';
 import { ActivatedRoute, Router } from '@angular/router';
 import {NgxMaskDirective,provideNgxMask} from 'ngx-mask'
+import { Brasilapi } from '../brasilapi';
+import { Estado, Municipio } from '../brasilapi.models';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-cadastro',
-  imports: [FlexLayoutModule,MatCardModule,FormsModule,
-            MatFormFieldModule,MatInputModule,MatIconModule,
-            MatButtonModule,NgxMaskDirective
-  ],providers:[
+  imports: [FlexLayoutModule, MatCardModule, FormsModule,
+    MatFormFieldModule, MatInputModule, MatIconModule,
+    MatSelectModule, CommonModule,
+    MatButtonModule, NgxMaskDirective,],providers:[
     provideNgxMask()
   ],
   templateUrl:'./cadastro.html',
@@ -26,9 +30,13 @@ import {NgxMaskDirective,provideNgxMask} from 'ngx-mask'
 export class Cadastro implements OnInit  {
   cliente: Cliente = Cliente.newCliente();
   atualizando:boolean = false;
-  snack: MatSnackBar = inject(MatSnackBar)
+  snack: MatSnackBar = inject(MatSnackBar);
+  estados: Estado []=[];
+  municipios: Municipio []=[]
+  
 
   constructor(private service: ClienteService,
+    private BrasilApiService : Brasilapi,
     private route: ActivatedRoute,
     private router : Router
   ){
@@ -43,10 +51,33 @@ export class Cadastro implements OnInit  {
       if(clienteEncontrado){
            this.atualizando = true;
           this.cliente = clienteEncontrado;
+
+          if(this,this.cliente.uf){
+            const event = {value:this.cliente.uf}
+            this.carregarMunicipios(event as MatSelectChange);
+          }
       } 
          
           }
      })
+     this.carregarUFs();
+  }
+  carregarUFs(){
+    this.BrasilApiService.listarUFs().subscribe({
+      next: listaEstado => this.estados = listaEstado,
+      error :erro =>console.log("ocorreu erro ", erro)
+      
+  
+    })
+  }
+  carregarMunicipios(event: MatSelectChange){
+
+    const ufSelecionada = event.value;
+    this.BrasilApiService.listarMunicipio(ufSelecionada).subscribe({
+      next:listarMunicipios => this.municipios = listarMunicipios,
+      error : erro =>console.log('ocorreu erro ',erro)
+    })
+
   }
 
     salvar(){
